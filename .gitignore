@@ -44,6 +44,7 @@ coverage/
 *.swp
 *.swo
 *~
+.claude/
 
 # Logs
 *.log

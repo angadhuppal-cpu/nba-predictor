@@ -73,7 +73,7 @@ def update_cache():
 
         conn.close()
 
-        print(f"✓ Cache updated: {len(cache['players'])} players, {len(cache['teams'])} teams")
+        print(f"Cache updated: {len(cache['players'])} players, {len(cache['teams'])} teams")
 
     except Exception as e:
         print(f"Error updating cache: {e}")
@@ -437,7 +437,7 @@ if __name__ == '__main__':
     debug = os.environ.get('FLASK_ENV') == 'development'
 
     print(f"\n{'='*50}")
-    print(f"🏀 NBA Prediction System Server")
+    print(f"NBA Prediction System Server")
     print(f"{'='*50}")
     print(f"Server running on: http://localhost:{port}")
     print(f"API Documentation: http://localhost:{port}/api/health")
