@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      - DATABASE_PATH=/app/data/nba_data.db
+    volumes:
+      - ./database:/app/data
+      - ./backend:/app
+    depends_on:
+      - db-init
+    networks:
+      - nba-network
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - nba-network
+    restart: unless-stopped
+
+  db-init:
+    build:
+      context: ./database
+      dockerfile: Dockerfile
+    volumes:
+      - ./database:/app/data
+    networks:
+      - nba-network
+    command: python init_db.py /app/data/nba_data.db
+
+networks:
+  nba-network:
+    driver: bridge
+
+volumes:
+  db-data:
