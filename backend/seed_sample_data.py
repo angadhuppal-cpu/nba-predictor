@@ -133,7 +133,7 @@ def seed_database(db_path='../database/nba_data.db'):
                 fgm, fga, three_pm, three_pa, ftm, fta, plus_minus, fantasy_points
             ))
 
-    print(f"✓ Generated {len(players) * games_per_player} game records")
+    print(f"[OK] Generated {len(players) * games_per_player} game records")
 
     # Generate team defensive statistics
     print("Generating team statistics...")
@@ -153,7 +153,7 @@ def seed_database(db_path='../database/nba_data.db'):
             off_rating, def_rating, off_rating - def_rating, pace
         ))
 
-    print(f"✓ Generated statistics for {len(teams)} teams")
+    print(f"[OK] Generated statistics for {len(teams)} teams")
 
     # Generate some sample injuries
     print("Generating injury reports...")
@@ -174,7 +174,7 @@ def seed_database(db_path='../database/nba_data.db'):
             injury, status, datetime.now().strftime('%Y-%m-%d')
         ))
 
-    print("✓ Generated sample injury reports")
+    print("[OK] Generated sample injury reports")
 
     # Generate game schedule for next 7 days
     print("Generating upcoming schedule...")
@@ -196,14 +196,14 @@ def seed_database(db_path='../database/nba_data.db'):
                 '19:30', home_team, away_team, 'Scheduled'
             ))
 
-    print("✓ Generated 7-day schedule")
+    print("[OK] Generated 7-day schedule")
 
     # Commit all changes
     conn.commit()
     conn.close()
 
     print("\n" + "=" * 60)
-    print("✓ Database seeding completed successfully!")
+    print("[OK] Database seeding completed successfully!")
     print("=" * 60)
     print(f"\nData summary:")
     print(f"  - Players: {len(players)}")
