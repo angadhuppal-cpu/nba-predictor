@@ -66,10 +66,11 @@ def update_cache():
         cursor = conn.cursor()
 
         # Get all players with their season stats (minimum 5 games played for relevance)
+        # Use only the current season (2024-25) for accurate team assignments
         cursor.execute("""
             SELECT DISTINCT player_id, player_name, team, games_played, points_avg
             FROM player_season_stats
-            WHERE games_played >= 5
+            WHERE games_played >= 5 AND season = '2024-25'
             ORDER BY points_avg DESC
         """)
 
