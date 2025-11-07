@@ -31,6 +31,30 @@ cache = {
     'last_update': None
 }
 
+# Team name to abbreviation mapping
+TEAM_NAME_TO_ABBR = {
+    'Atlanta Hawks': 'ATL', 'Boston Celtics': 'BOS', 'Brooklyn Nets': 'BKN',
+    'Charlotte Hornets': 'CHA', 'Chicago Bulls': 'CHI', 'Cleveland Cavaliers': 'CLE',
+    'Dallas Mavericks': 'DAL', 'Denver Nuggets': 'DEN', 'Detroit Pistons': 'DET',
+    'Golden State Warriors': 'GSW', 'Houston Rockets': 'HOU', 'Indiana Pacers': 'IND',
+    'LA Clippers': 'LAC', 'Los Angeles Lakers': 'LAL', 'Memphis Grizzlies': 'MEM',
+    'Miami Heat': 'MIA', 'Milwaukee Bucks': 'MIL', 'Minnesota Timberwolves': 'MIN',
+    'New Orleans Pelicans': 'NOP', 'New York Knicks': 'NYK', 'Oklahoma City Thunder': 'OKC',
+    'Orlando Magic': 'ORL', 'Philadelphia 76ers': 'PHI', 'Phoenix Suns': 'PHX',
+    'Portland Trail Blazers': 'POR', 'Sacramento Kings': 'SAC', 'San Antonio Spurs': 'SAS',
+    'Toronto Raptors': 'TOR', 'Utah Jazz': 'UTA', 'Washington Wizards': 'WAS'
+}
+
+def get_team_abbr(team_name):
+    """Convert full team name to abbreviation"""
+    # If already an abbreviation, return as-is
+    if team_name in ['ATL', 'BOS', 'BKN', 'CHA', 'CHI', 'CLE', 'DAL', 'DEN', 'DET',
+                     'GSW', 'HOU', 'IND', 'LAC', 'LAL', 'MEM', 'MIA', 'MIL', 'MIN',
+                     'NOP', 'NYK', 'OKC', 'ORL', 'PHI', 'PHX', 'POR', 'SAC', 'SAS',
+                     'TOR', 'UTA', 'WAS']:
+        return team_name
+    return TEAM_NAME_TO_ABBR.get(team_name, team_name)
+
 def update_cache():
     """Update cached data from database"""
     global cache
@@ -134,6 +158,9 @@ def get_player_history():
         if not player_name or not opponent_team:
             return jsonify({'error': 'Missing player or opponent parameter'}), 400
 
+        # Convert full team name to abbreviation
+        opponent_abbr = get_team_abbr(opponent_team)
+
         # Fetch historical games from database
         conn = sqlite3.connect('../database/nba_data.db')
         cursor = conn.cursor()
@@ -147,7 +174,7 @@ def get_player_history():
             WHERE player_name = ? AND opponent = ?
             ORDER BY date DESC
             LIMIT 20
-        """, (player_name, opponent_team))
+        """, (player_name, opponent_abbr))
 
         games = cursor.fetchall()
         conn.close()
