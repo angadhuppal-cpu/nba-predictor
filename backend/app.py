@@ -13,13 +13,15 @@ import os
 import sqlite3
 from nba_predictor import NBAPredictor
 from advanced_predictor import AdvancedNBAPredictor
+from elite_predictor import EliteNBAPredictor
 from nba_data_fetcher import NBADataFetcher, AdvancedAnalytics
 
 app = Flask(__name__, static_folder='../frontend/build')
 CORS(app)
 
 # Initialize prediction system
-predictor = AdvancedNBAPredictor()  # Using advanced predictor with probability calculations
+predictor = EliteNBAPredictor()  # Using elite predictor with usage rates, defender matchups, teammate injuries
+advanced_predictor = AdvancedNBAPredictor()  # Keep for fallback
 basic_predictor = NBAPredictor()  # Keep for fallback
 data_fetcher = NBADataFetcher()
 analytics = AdvancedAnalytics()
@@ -55,6 +57,34 @@ def get_team_abbr(team_name):
         return team_name
     return TEAM_NAME_TO_ABBR.get(team_name, team_name)
 
+def get_player_info(player_name):
+    """Get player's team and position from cache or database"""
+    # Try to find player in cache
+    for player in cache.get('players', []):
+        if player.get('name') == player_name:
+            return {
+                'team': player.get('team'),
+                'position': player.get('position', 'G')
+            }
+
+    # If not in cache, query database
+    try:
+        conn = sqlite3.connect('../database/nba_data.db', check_same_thread=False)
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT team FROM player_season_stats
+            WHERE player_name = ? AND season = '2025-26'
+            LIMIT 1
+        """, (player_name,))
+        result = cursor.fetchone()
+        conn.close()
+        if result:
+            return {'team': result[0], 'position': 'G'}
+        else:
+            return {'team': None, 'position': 'G'}
+    except:
+        return {'team': None, 'position': 'G'}
+
 def update_cache():
     """Update cached data from database"""
     global cache
@@ -62,7 +92,7 @@ def update_cache():
 
     try:
         # Fetch players from database
-        conn = sqlite3.connect('../database/nba_data.db')
+        conn = sqlite3.connect('../database/nba_data.db', check_same_thread=False)
         cursor = conn.cursor()
 
         # Get all players with their season stats (minimum 5 games played for relevance)
@@ -163,7 +193,7 @@ def get_player_history():
         opponent_abbr = get_team_abbr(opponent_team)
 
         # Fetch historical games from database
-        conn = sqlite3.connect('../database/nba_data.db')
+        conn = sqlite3.connect('../database/nba_data.db', check_same_thread=False)
         cursor = conn.cursor()
 
         cursor.execute("""
@@ -249,14 +279,21 @@ def predict():
         # Get custom factors if provided
         custom_factors = data.get('custom_factors', None)
 
-        # Get prediction
-        prediction = predictor.predict_performance(
+        # Get player's team and position from cache
+        player_info = get_player_info(data['player'])
+        player_team = player_info.get('team', None)
+        player_position = player_info.get('position', 'G')  # Default to Guard
+
+        # Get prediction using elite predictor
+        prediction = predictor.elite_predict_performance(
             player_name=data['player'],
             opponent=data['opponent'],
             game_date=datetime.strptime(data['game_date'], '%Y-%m-%d'),
             is_home=data.get('is_home', True),
             injury_status=injury,
-            custom_factors=custom_factors
+            custom_factors=custom_factors,
+            player_position=player_position,
+            player_team=player_team
         )
 
         return jsonify(prediction)
@@ -357,7 +394,7 @@ def get_team_stats():
         team_name = request.args.get('team')
         season = request.args.get('season', '2024-25')
 
-        conn = sqlite3.connect('../database/nba_data.db')
+        conn = sqlite3.connect('../database/nba_data.db', check_same_thread=False)
         cursor = conn.cursor()
 
         if team_name:

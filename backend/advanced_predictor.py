@@ -30,7 +30,7 @@ class AdvancedNBAPredictor:
     def connect_db(self):
         """Connect to database"""
         if not self.conn:
-            self.conn = sqlite3.connect(self.db_path)
+            self.conn = sqlite3.connect(self.db_path, check_same_thread=False)
 
     def close_db(self):
         """Close database connection"""

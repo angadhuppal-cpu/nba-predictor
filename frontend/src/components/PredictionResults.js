@@ -41,14 +41,65 @@ function PredictionResults({ prediction, playerName }) {
         </div>
       )}
 
+      {prediction.elite_analysis && (
+        <div className="bg-purple-500/20 border-l-4 border-purple-500 p-4 rounded mt-4">
+          <h3 className="font-bold mb-2 flex items-center">
+            <span className="mr-2">🎯</span> Elite Analytics
+          </h3>
+          <p className="whitespace-pre-line text-sm leading-relaxed">
+            {prediction.elite_analysis}
+          </p>
+        </div>
+      )}
+
+      {prediction.elite_factors && (
+        <div className="mt-4 bg-blue-500/20 border-l-4 border-blue-500 p-4 rounded">
+          <h3 className="font-bold mb-3 flex items-center">
+            <span className="mr-2">🔬</span> Advanced Metrics
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div className="bg-white/10 rounded p-3">
+              <div className="font-semibold mb-1">Usage Rate</div>
+              <div className="text-lg">{prediction.elite_factors.usage_rate}%</div>
+              <div className="text-xs opacity-70">Share of team possessions</div>
+            </div>
+            <div className="bg-white/10 rounded p-3">
+              <div className="font-semibold mb-1">True Shooting %</div>
+              <div className="text-lg">{prediction.elite_factors.true_shooting_pct}%</div>
+              <div className="text-xs opacity-70">Shooting efficiency</div>
+            </div>
+            {prediction.elite_factors.teammate_injury_impact && (
+              <div className="bg-white/10 rounded p-3">
+                <div className="font-semibold mb-1">Teammate Injuries</div>
+                <div className="text-lg">
+                  {prediction.elite_factors.teammate_injury_impact.injured_count} players out
+                </div>
+                <div className="text-xs opacity-70">
+                  Usage boost: {((prediction.elite_factors.teammate_injury_impact.usage_boost - 1) * 100).toFixed(1)}%
+                </div>
+              </div>
+            )}
+            {prediction.elite_factors.defender_matchup && (
+              <div className="bg-white/10 rounded p-3">
+                <div className="font-semibold mb-1">Defender Matchup</div>
+                <div className="text-lg">{prediction.elite_factors.defender_matchup.difficulty}</div>
+                <div className="text-xs opacity-70">
+                  Impact: {(prediction.elite_factors.defender_matchup.impact * 100).toFixed(0)}%
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4 text-center text-sm opacity-80">
         <div className="bg-white/10 rounded-lg p-3">
           <div className="font-semibold">Model Type</div>
-          <div>Ensemble ML</div>
+          <div>Elite AI Engine</div>
         </div>
         <div className="bg-white/10 rounded-lg p-3">
           <div className="font-semibold">Factors Analyzed</div>
-          <div>15+ Variables</div>
+          <div>20+ Advanced Metrics</div>
         </div>
         <div className="bg-white/10 rounded-lg p-3">
           <div className="font-semibold">Prediction Time</div>
