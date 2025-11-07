@@ -1,4 +1,5 @@
 import React from 'react';
+import SearchableSelect from './SearchableSelect';
 
 function PredictionForm({
   selectedPlayer,
@@ -19,42 +20,22 @@ function PredictionForm({
 }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-      <div>
-        <label className="block text-sm font-medium mb-2">Select Player</label>
-        <select
-          value={selectedPlayer}
-          onChange={(e) => setSelectedPlayer(e.target.value)}
-          className="w-full p-3 rounded-lg bg-white/20 text-white border border-white/30 focus:outline-none focus:ring-2 focus:ring-orange-500"
-        >
-          <option value="" className="text-gray-900">
-            Choose a player...
-          </option>
-          {players.map((player) => (
-            <option key={player.id} value={player.name} className="text-gray-900">
-              {player.name} ({player.team} - {player.position})
-            </option>
-          ))}
-        </select>
-      </div>
+      <SearchableSelect
+        value={selectedPlayer}
+        onChange={setSelectedPlayer}
+        options={players}
+        placeholder="Type player name..."
+        label="Select Player"
+      />
 
       {compareMode && (
-        <div>
-          <label className="block text-sm font-medium mb-2">Compare With</label>
-          <select
-            value={player2}
-            onChange={(e) => setPlayer2(e.target.value)}
-            className="w-full p-3 rounded-lg bg-white/20 text-white border border-white/30 focus:outline-none focus:ring-2 focus:ring-orange-500"
-          >
-            <option value="" className="text-gray-900">
-              Choose second player...
-            </option>
-            {players.map((player) => (
-              <option key={player.id} value={player.name} className="text-gray-900">
-                {player.name} ({player.team} - {player.position})
-              </option>
-            ))}
-          </select>
-        </div>
+        <SearchableSelect
+          value={player2}
+          onChange={setPlayer2}
+          options={players}
+          placeholder="Type player name..."
+          label="Compare With"
+        />
       )}
 
       <div>
