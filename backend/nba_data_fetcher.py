@@ -1,6 +1,10 @@
 """
 NBA Data Fetcher - Real-time statistics and data collection
-Fetches data from multiple sources for comprehensive analysis
+Fetches data from multiple sources for comprehensive analysis:
+- NBA Stats API (Official NBA statistics)
+- ESPN (Injury reports, schedules)
+- Basketball Reference (Historical data)
+- StatMuse (Granular matchup stats, splits, clutch performance)
 """
 
 import requests
@@ -26,7 +30,8 @@ class NBADataFetcher:
         self.base_urls = {
             'nba_stats': 'https://stats.nba.com/stats',
             'espn': 'https://www.espn.com/nba',
-            'basketball_ref': 'https://www.basketball-reference.com'
+            'basketball_ref': 'https://www.basketball-reference.com',
+            'statmuse': 'https://www.statmuse.com'
         }
 
         self.headers = {
@@ -201,6 +206,81 @@ class NBADataFetcher:
         except Exception as e:
             print(f"Error fetching game log: {e}")
             return pd.DataFrame()
+
+    def fetch_player_advanced_stats(self, season='2024-25'):
+        """Fetch advanced player stats including Usage Rate from NBA Stats API"""
+        endpoint = f"{self.base_urls['nba_stats']}/leaguedashplayerstats"
+
+        params = {
+            'MeasureType': 'Advanced',  # Get advanced metrics
+            'PerMode': 'PerGame',
+            'Season': season,
+            'SeasonType': 'Regular Season',
+            'Outcome': '',
+            'Location': '',
+            'Month': 0,
+            'SeasonSegment': '',
+            'DateFrom': '',
+            'DateTo': '',
+            'OpponentTeamID': 0,
+            'VsConference': '',
+            'VsDivision': '',
+            'TeamID': 0,
+            'Conference': '',
+            'Division': '',
+            'GameSegment': '',
+            'Period': 0,
+            'ShotClockRange': '',
+            'LastNGames': 0
+        }
+
+        try:
+            response = requests.get(endpoint, headers=self.headers, params=params)
+            if response.status_code == 200:
+                data = response.json()
+                headers = data['resultSets'][0]['headers']
+                rows = data['resultSets'][0]['rowSet']
+
+                df = pd.DataFrame(rows, columns=headers)
+
+                # Extract relevant advanced stats
+                # USG_PCT = Usage Percentage
+                # TS_PCT = True Shooting Percentage
+                # AST_PCT = Assist Percentage
+
+                print(f"Fetched advanced stats for {len(df)} players")
+                return df
+            else:
+                print(f"Error fetching advanced stats: {response.status_code}")
+                return pd.DataFrame()
+
+        except Exception as e:
+            print(f"Error: {e}")
+            return pd.DataFrame()
+
+    def get_player_usage_rate(self, player_name, season='2024-25'):
+        """Get real usage rate for a specific player from NBA Stats API"""
+        df = self.fetch_player_advanced_stats(season)
+
+        if df.empty:
+            return None
+
+        # Find player in dataframe
+        player_data = df[df['PLAYER_NAME'] == player_name]
+
+        if player_data.empty:
+            return None
+
+        # Get usage percentage (USG_PCT from NBA API is a decimal like 0.387 for 38.7%)
+        usage_pct = player_data.iloc[0].get('USG_PCT', None)
+
+        return {
+            'usage_rate': float(usage_pct) * 100.0 if usage_pct else None,  # Convert to percentage
+            'true_shooting_pct': float(player_data.iloc[0].get('TS_PCT', 0)),  # Already decimal (0.636 = 63.6%)
+            'assist_pct': float(player_data.iloc[0].get('AST_PCT', 0)) * 100.0,  # Convert to percentage
+            'rebound_pct': float(player_data.iloc[0].get('REB_PCT', 0)) * 100.0,  # Convert to percentage
+            'source': 'NBA Stats API'
+        }
 
     def fetch_team_stats(self, season='2024-25'):
         """Fetch current team statistics"""
