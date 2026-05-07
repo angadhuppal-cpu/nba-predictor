@@ -44,5 +44,6 @@ black>=23.0.0
 # Production server
 gunicorn>=21.0.0
 
-# AI gambling line advisor (Claude API)
+# AI gambling line advisor — pick one (or both, set LLM_PROVIDER to choose)
+google-genai>=0.3.0
 anthropic>=0.40.0

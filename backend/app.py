@@ -37,8 +37,8 @@ def get_advisor():
     """Initialize the AI advisor on first use; raise a clean error otherwise."""
     global _advisor
     if _advisor is None:
-        from ai_advisor import NBALineAdvisor
-        _advisor = NBALineAdvisor(evaluator=line_evaluator)
+        from ai_advisor import get_advisor as _get_advisor
+        _advisor = _get_advisor(evaluator=line_evaluator)
     return _advisor
 
 # Cache for frequently accessed data

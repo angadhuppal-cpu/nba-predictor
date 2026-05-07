@@ -21,7 +21,7 @@ try:
 except ImportError:
     pass
 
-from ai_advisor import NBALineAdvisor
+from ai_advisor import get_advisor
 
 
 BANNER = """\
@@ -35,7 +35,8 @@ BANNER = """\
 
 def run_interactive():
     print(BANNER)
-    advisor = NBALineAdvisor()
+    advisor = get_advisor()
+    print(f"(provider: {type(advisor).__name__}, model: {advisor.model})\n")
     history = []
 
     while True:
@@ -67,7 +68,7 @@ def run_interactive():
 
 
 def run_oneshot(question: str):
-    advisor = NBALineAdvisor()
+    advisor = get_advisor()
     result = advisor.chat(question)
     print(result["reply"])
 
