@@ -16,6 +16,7 @@ from advanced_predictor import AdvancedNBAPredictor
 from elite_predictor import EliteNBAPredictor
 from nba_data_fetcher import NBADataFetcher, AdvancedAnalytics
 from line_evaluator import LineEvaluator
+from parlay import evaluate_parlay, scan_slate_for_edges, get_todays_games
 
 app = Flask(__name__, static_folder='../frontend/build')
 CORS(app)
@@ -564,6 +565,41 @@ def ai_chat_endpoint():
             'tool_calls': result['tool_calls'],
             'stop_reason': result['stop_reason'],
         })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/parlay/evaluate', methods=['POST'])
+def parlay_endpoint():
+    """Evaluate a multi-leg parlay. Returns combined probability."""
+    try:
+        data = request.json or {}
+        legs = data.get('legs', [])
+        if not isinstance(legs, list):
+            return jsonify({'error': 'legs must be a list'}), 400
+        result = evaluate_parlay(line_evaluator, legs)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/slate/today', methods=['GET'])
+def slate_today_endpoint():
+    """Return tonight's games + best statistical edges across the slate."""
+    try:
+        date = request.args.get('date')
+        result = scan_slate_for_edges(line_evaluator, date=date)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/games/today', methods=['GET'])
+def games_today_endpoint():
+    """Just the games scheduled for a given date (default today)."""
+    try:
+        date = request.args.get('date')
+        return jsonify({'date': date, 'games': get_todays_games(date=date)})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

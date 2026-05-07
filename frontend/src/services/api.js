@@ -162,7 +162,33 @@ export async function resetAdvisor(sessionId = 'default') {
   });
 }
 
-export default {
+/**
+ * Evaluate a parlay (multiple legs combined).
+ */
+export async function evaluateParlay(legs) {
+  return fetchAPI('/parlay/evaluate', {
+    method: 'POST',
+    body: JSON.stringify({ legs }),
+  });
+}
+
+/**
+ * Fetch today's slate: tonight's games and league-wide best edges.
+ */
+export async function fetchTodaysSlate(date) {
+  const qs = date ? `?date=${date}` : '';
+  return fetchAPI(`/slate/today${qs}`);
+}
+
+/**
+ * Fetch tonight's games only.
+ */
+export async function fetchTodaysGames(date) {
+  const qs = date ? `?date=${date}` : '';
+  return fetchAPI(`/games/today${qs}`);
+}
+
+const api = {
   fetchPlayers,
   fetchTeams,
   predictPerformance,
@@ -174,4 +200,13 @@ export default {
   updateData,
   fetchStats,
   healthCheck,
+  evaluateLine,
+  findBestLines,
+  chatWithAdvisor,
+  resetAdvisor,
+  evaluateParlay,
+  fetchTodaysSlate,
+  fetchTodaysGames,
 };
+
+export default api;

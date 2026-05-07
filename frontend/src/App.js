@@ -7,6 +7,9 @@ import HistoricalPerformance from './components/HistoricalPerformance';
 import PredictionFactors from './components/PredictionFactors';
 import PredictionVariables from './components/PredictionVariables';
 import LineAI from './components/LineAI';
+import ParlayBuilder from './components/ParlayBuilder';
+import TodaysSlate from './components/TodaysSlate';
+import SavedBets from './components/SavedBets';
 import { fetchPlayers, fetchTeams, predictPerformance, comparePlayers } from './services/api';
 
 function App() {
@@ -23,7 +26,7 @@ function App() {
   const [player2, setPlayer2] = useState('');
   const [comparison, setComparison] = useState(null);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState('predictor'); // 'predictor' | 'lineAI'
+  const [activeTab, setActiveTab] = useState('slate'); // slate | lineAI | parlay | predictor | saved
 
   // Custom prediction factors
   const [customFactors, setCustomFactors] = useState({
@@ -122,26 +125,32 @@ function App() {
         </header>
 
         <div className="max-w-6xl mx-auto">
-          <div className="flex justify-center mb-6 gap-2">
-            <button
-              onClick={() => setActiveTab('predictor')}
-              className={`px-6 py-2 rounded-lg transition-colors ${
-                activeTab === 'predictor' ? 'bg-orange-500' : 'bg-gray-700 hover:bg-gray-600'
-              }`}
-            >
-              📈 Predictor
-            </button>
-            <button
-              onClick={() => setActiveTab('lineAI')}
-              className={`px-6 py-2 rounded-lg transition-colors ${
-                activeTab === 'lineAI' ? 'bg-orange-500' : 'bg-gray-700 hover:bg-gray-600'
-              }`}
-            >
-              🤖 Line AI (Gambling)
-            </button>
+          <div className="flex flex-wrap justify-center mb-6 gap-2">
+            {[
+              { id: 'slate', label: '📅 Today' },
+              { id: 'lineAI', label: '🤖 Line AI' },
+              { id: 'parlay', label: '🎯 Parlay' },
+              { id: 'predictor', label: '📈 Predictor' },
+              { id: 'saved', label: '📒 History' },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-4 md:px-6 py-2 rounded-lg transition-colors text-sm md:text-base ${
+                  activeTab === tab.id
+                    ? 'bg-orange-500'
+                    : 'bg-gray-700 hover:bg-gray-600'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
 
+          {activeTab === 'slate' && <TodaysSlate />}
           {activeTab === 'lineAI' && <LineAI />}
+          {activeTab === 'parlay' && <ParlayBuilder />}
+          {activeTab === 'saved' && <SavedBets />}
 
           {activeTab === 'predictor' && (
           <div className="max-w-4xl mx-auto">
