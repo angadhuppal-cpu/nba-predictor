@@ -15,6 +15,7 @@ from nba_predictor import NBAPredictor
 from advanced_predictor import AdvancedNBAPredictor
 from elite_predictor import EliteNBAPredictor
 from nba_data_fetcher import NBADataFetcher, AdvancedAnalytics
+from line_evaluator import LineEvaluator
 
 app = Flask(__name__, static_folder='../frontend/build')
 CORS(app)
@@ -25,6 +26,20 @@ advanced_predictor = AdvancedNBAPredictor()  # Keep for fallback
 basic_predictor = NBAPredictor()  # Keep for fallback
 data_fetcher = NBADataFetcher()
 analytics = AdvancedAnalytics()
+line_evaluator = LineEvaluator(predictor=predictor)
+
+# Lazy-loaded so the app can boot without ANTHROPIC_API_KEY set.
+_advisor = None
+_advisor_sessions = {}  # session_id -> conversation history
+
+
+def get_advisor():
+    """Initialize the AI advisor on first use; raise a clean error otherwise."""
+    global _advisor
+    if _advisor is None:
+        from ai_advisor import NBALineAdvisor
+        _advisor = NBALineAdvisor(evaluator=line_evaluator)
+    return _advisor
 
 # Cache for frequently accessed data
 cache = {
@@ -479,6 +494,88 @@ def get_team_stats():
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+# --- Line Evaluator + AI Advisor endpoints ---
+
+@app.route('/api/line/evaluate', methods=['POST'])
+def evaluate_line_endpoint():
+    """Evaluate a single sportsbook prop line (no LLM, pure stats)."""
+    try:
+        data = request.json or {}
+        required = ['player', 'stat', 'line', 'direction']
+        for f in required:
+            if f not in data:
+                return jsonify({'error': f'Missing field: {f}'}), 400
+        ev = line_evaluator.evaluate_line(
+            player_name=data['player'],
+            stat=data['stat'],
+            line=float(data['line']),
+            opponent=data.get('opponent'),
+            direction=data.get('direction', 'over'),
+            american_odds=data.get('american_odds'),
+        )
+        return jsonify(ev.to_dict())
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/line/best', methods=['POST'])
+def best_lines_endpoint():
+    """Scan common lines for a player; return top edges."""
+    try:
+        data = request.json or {}
+        if 'player' not in data:
+            return jsonify({'error': 'Missing field: player'}), 400
+        results = line_evaluator.best_lines_for_player(
+            player_name=data['player'],
+            opponent=data.get('opponent'),
+        )
+        return jsonify({'player': data['player'], 'results': results})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/ai/chat', methods=['POST'])
+def ai_chat_endpoint():
+    """Conversational AI advisor. Takes {message, session_id?} and returns the reply.
+
+    Pass the same `session_id` across requests to continue a conversation.
+    """
+    try:
+        data = request.json or {}
+        message = data.get('message', '').strip()
+        session_id = data.get('session_id') or 'default'
+        if not message:
+            return jsonify({'error': 'Missing field: message'}), 400
+
+        try:
+            advisor = get_advisor()
+        except RuntimeError as e:
+            return jsonify({'error': str(e)}), 503
+
+        history = _advisor_sessions.get(session_id, [])
+        result = advisor.chat(message, history=history)
+        _advisor_sessions[session_id] = result['history']
+        return jsonify({
+            'reply': result['reply'],
+            'session_id': session_id,
+            'tool_calls': result['tool_calls'],
+            'stop_reason': result['stop_reason'],
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/ai/reset', methods=['POST'])
+def ai_reset_endpoint():
+    """Reset a chat session's conversation history."""
+    data = request.json or {}
+    session_id = data.get('session_id', 'default')
+    _advisor_sessions.pop(session_id, None)
+    return jsonify({'status': 'ok', 'session_id': session_id})
+
 
 # Error handlers
 @app.errorhandler(404)

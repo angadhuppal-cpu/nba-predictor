@@ -6,6 +6,7 @@ import ComparisonResults from './components/ComparisonResults';
 import HistoricalPerformance from './components/HistoricalPerformance';
 import PredictionFactors from './components/PredictionFactors';
 import PredictionVariables from './components/PredictionVariables';
+import LineAI from './components/LineAI';
 import { fetchPlayers, fetchTeams, predictPerformance, comparePlayers } from './services/api';
 
 function App() {
@@ -22,6 +23,7 @@ function App() {
   const [player2, setPlayer2] = useState('');
   const [comparison, setComparison] = useState(null);
   const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState('predictor'); // 'predictor' | 'lineAI'
 
   // Custom prediction factors
   const [customFactors, setCustomFactors] = useState({
@@ -119,7 +121,30 @@ function App() {
           </p>
         </header>
 
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex justify-center mb-6 gap-2">
+            <button
+              onClick={() => setActiveTab('predictor')}
+              className={`px-6 py-2 rounded-lg transition-colors ${
+                activeTab === 'predictor' ? 'bg-orange-500' : 'bg-gray-700 hover:bg-gray-600'
+              }`}
+            >
+              📈 Predictor
+            </button>
+            <button
+              onClick={() => setActiveTab('lineAI')}
+              className={`px-6 py-2 rounded-lg transition-colors ${
+                activeTab === 'lineAI' ? 'bg-orange-500' : 'bg-gray-700 hover:bg-gray-600'
+              }`}
+            >
+              🤖 Line AI (Gambling)
+            </button>
+          </div>
+
+          {activeTab === 'lineAI' && <LineAI />}
+
+          {activeTab === 'predictor' && (
+          <div className="max-w-4xl mx-auto">
           <div className="bg-white/10 backdrop-blur-md rounded-xl shadow-2xl p-8 mb-8">
             <div className="flex justify-center mb-6">
               <button
@@ -220,6 +245,8 @@ function App() {
 
           {comparison && compareMode && (
             <ComparisonResults comparison={comparison} />
+          )}
+          </div>
           )}
         </div>
 

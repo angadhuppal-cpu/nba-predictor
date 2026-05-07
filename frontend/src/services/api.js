@@ -122,6 +122,46 @@ export async function healthCheck() {
   return fetchAPI('/health');
 }
 
+/**
+ * Evaluate a sportsbook prop line (pure stats, no LLM).
+ */
+export async function evaluateLine(payload) {
+  return fetchAPI('/line/evaluate', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+/**
+ * Find the strongest-edge prop lines for a player.
+ */
+export async function findBestLines(payload) {
+  return fetchAPI('/line/best', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+/**
+ * Send a message to the AI advisor (Claude with tool-use).
+ */
+export async function chatWithAdvisor(message, sessionId = 'default') {
+  return fetchAPI('/ai/chat', {
+    method: 'POST',
+    body: JSON.stringify({ message, session_id: sessionId }),
+  });
+}
+
+/**
+ * Reset an AI advisor conversation session.
+ */
+export async function resetAdvisor(sessionId = 'default') {
+  return fetchAPI('/ai/reset', {
+    method: 'POST',
+    body: JSON.stringify({ session_id: sessionId }),
+  });
+}
+
 export default {
   fetchPlayers,
   fetchTeams,

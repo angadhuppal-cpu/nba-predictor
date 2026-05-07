@@ -43,3 +43,6 @@ black>=23.0.0
 
 # Production server
 gunicorn>=21.0.0
+
+# AI gambling line advisor (Claude API)
+anthropic>=0.40.0
