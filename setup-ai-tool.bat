@@ -1,6 +1,6 @@
 @echo off
 REM =====================================================================
-REM  NBA Line AI — one-shot setup for Windows
+REM  NBA Line AI - one-shot setup for Windows
 REM
 REM  Installs Python + Node deps and builds the React frontend.
 REM  Run this ONCE after pulling the AI branch. After it finishes,
@@ -18,21 +18,11 @@ echo.
 
 REM ---- 1. Verify Python is on PATH ------------------------------------
 where python >nul 2>nul
-if errorlevel 1 (
-    echo [ERROR] Python is not on PATH. Install Python 3.10+ from
-    echo         https://www.python.org/downloads/ and re-run this script.
-    pause
-    exit /b 1
-)
+if errorlevel 1 goto :no_python
 
 REM ---- 2. Verify Node is on PATH --------------------------------------
 where node >nul 2>nul
-if errorlevel 1 (
-    echo [ERROR] Node.js is not on PATH. Install Node 18+ from
-    echo         https://nodejs.org/ and re-run this script.
-    pause
-    exit /b 1
-)
+if errorlevel 1 goto :no_node
 
 REM ---- 3. Install backend Python dependencies -------------------------
 echo [1/3] Installing Python dependencies...
@@ -69,10 +59,22 @@ echo =============================================================
 pause
 exit /b 0
 
+:no_python
+echo [ERROR] Python is not on PATH. Install Python 3.10+ from
+echo         https://www.python.org/downloads/ and re-run this script.
+pause
+exit /b 1
+
+:no_node
+echo [ERROR] Node.js is not on PATH. Install Node 18+ from
+echo         https://nodejs.org/ and re-run this script.
+pause
+exit /b 1
+
 :pip_failed
 echo.
 echo [ERROR] pip install failed. Common causes:
-echo   - Behind a proxy: try `pip install --proxy http://yourproxy:port -r requirements.txt`
+echo   - Behind a proxy: set HTTP_PROXY / HTTPS_PROXY env vars
 echo   - Blocked by corp firewall on pypi.org
 echo   - Out of disk space
 pause
@@ -82,7 +84,7 @@ exit /b 1
 echo.
 echo [ERROR] npm install failed. Common causes:
 echo   - Network blocked from registry.npmjs.org
-echo   - Old Node version (need 18+); check with `node --version`
+echo   - Old Node version (need 18+); check with: node --version
 pause
 exit /b 1
 
