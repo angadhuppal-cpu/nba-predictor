@@ -88,7 +88,11 @@ def _cached(key: str, fetch, ttl: int = CACHE_TTL_SECONDS) -> list[dict]:
     except Exception as exc:  # network errors, timeouts, stats.nba.com blocking
         if path.exists():  # stale data beats no data
             return json.loads(path.read_text())
-        raise DataError(f"Could not fetch '{key}' from stats.nba.com: {exc}") from exc
+        print(f"[nba_predictor] fetching {key} failed: {exc}")
+        raise DataError(
+            "Couldn't load stats from NBA.com. The site is sometimes slow or briefly blocks requests: "
+            "wait a minute and try again. If you're on a VPN or a work/school network, try turning it off."
+        ) from exc
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(records))
     time.sleep(REQUEST_PAUSE_SECONDS)

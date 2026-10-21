@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NBA Predictor</title>
+<style>
+:root {
+  --bg: #f6f7f9; --panel: #ffffff; --text: #16181d; --muted: #5f6672; --line: #e2e5ea;
+  --accent: #c8501e; --accent-text: #ffffff; --good: #17803d; --bad: #b42318; --warn: #a15c00;
+  --soft: #f0f2f5; --user: #fbe9e1;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #111317; --panel: #1a1d23; --text: #e9ebef; --muted: #9aa1ad; --line: #2c3039;
+    --accent: #ef7a45; --accent-text: #111317; --good: #4cc477; --bad: #f2756a; --warn: #f0b04a;
+    --soft: #23272f; --user: #3a2a22;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 20px; background: var(--panel); border-bottom: 1px solid var(--line); }
+header h1 { font-size: 18px; margin: 0; }
+header h1 span { color: var(--accent); }
+main { max-width: 920px; margin: 0 auto; padding: 16px; }
+nav { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
+nav button, .btn { border: 1px solid var(--line); background: var(--panel); color: var(--text); padding: 8px 14px; border-radius: 8px; font: inherit; cursor: pointer; }
+nav button.active { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+.btn.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); font-weight: 600; }
+.btn:disabled { opacity: .55; cursor: wait; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+.hidden { display: none !important; }
+.muted { color: var(--muted); }
+.small { font-size: 13px; }
+.banner { background: var(--user); border: 1px solid var(--accent); border-radius: 10px; padding: 12px 14px; margin-bottom: 14px; }
+.error { color: var(--bad); white-space: pre-wrap; }
+
+/* chat */
+#messages { min-height: 260px; max-height: 60vh; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding-bottom: 8px; }
+.msg { padding: 10px 14px; border-radius: 10px; max-width: 100%; overflow-x: auto; }
+.msg.user { background: var(--user); align-self: flex-end; max-width: 85%; white-space: pre-wrap; }
+.msg.ai { background: var(--soft); }
+.msg.ai h1, .msg.ai h2, .msg.ai h3 { font-size: 16px; margin: 10px 0 4px; }
+.msg.ai p { margin: 6px 0; }
+.msg.ai ul, .msg.ai ol { margin: 4px 0; padding-left: 22px; }
+.msg.ai table { border-collapse: collapse; margin: 6px 0; font-size: 14px; }
+.msg.ai td, .msg.ai th { border: 1px solid var(--line); padding: 4px 8px; text-align: left; }
+.steps { font-size: 12px; color: var(--muted); margin-top: 6px; }
+.steps summary { cursor: pointer; }
+.composer { display: flex; gap: 8px; margin-top: 10px; }
+.composer textarea { flex: 1; min-height: 48px; resize: vertical; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 12px; }
+.chip { font-size: 13px; padding: 5px 10px; border-radius: 99px; border: 1px solid var(--line); background: var(--soft); color: var(--text); cursor: pointer; }
+.thinking { color: var(--muted); font-style: italic; }
+
+/* forms */
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px 12px; }
+label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); }
+input, select, textarea { font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; width: 100%; }
+label.check { flex-direction: row; align-items: center; gap: 8px; color: var(--text); padding-top: 22px; }
+label.check input { width: auto; }
+.actions { margin-top: 14px; display: flex; gap: 8px; align-items: center; }
+
+/* results */
+.result { margin-top: 14px; }
+.verdict { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding: 14px 16px; border-radius: 12px; border: 2px solid var(--line); margin-bottom: 12px; }
+.verdict .pick { font-size: 26px; font-weight: 800; }
+.verdict.strong { border-color: var(--good); }
+.verdict.lean { border-color: var(--warn); }
+.verdict.pass { border-color: var(--line); }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 12px; }
+.tile { background: var(--soft); border-radius: 10px; padding: 10px 12px; }
+.tile .k { font-size: 12px; color: var(--muted); }
+.tile .v { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.bar { display: flex; height: 26px; border-radius: 8px; overflow: hidden; margin: 6px 0 12px; font-size: 12px; font-weight: 600; }
+.bar div { display: flex; align-items: center; justify-content: center; color: #fff; min-width: 0; white-space: nowrap; }
+.bar .o { background: var(--good); } .bar .u { background: var(--bad); } .bar .p { background: var(--muted); }
+table.data { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: 14px; }
+table.data th, table.data td { text-align: right; padding: 5px 8px; border-bottom: 1px solid var(--line); }
+table.data th:first-child, table.data td:first-child { text-align: left; }
+table.data tr.near td { background: var(--user); font-weight: 600; }
+.pos { color: var(--good); } .neg { color: var(--bad); }
+.notes { margin: 4px 0 10px; padding-left: 18px; color: var(--muted); font-size: 14px; }
+.scroll { overflow-x: auto; }
+dialog { border: 1px solid var(--line); border-radius: 12px; background: var(--panel); color: var(--text); max-width: 480px; width: calc(100% - 32px); }
+dialog::backdrop { background: rgba(0,0,0,.45); }
+footer { text-align: center; color: var(--muted); font-size: 12px; padding: 20px 16px 30px; }
+@media (max-width: 560px) { header { padding: 12px 16px; } main { padding: 12px 16px; } .verdict .pick { font-size: 22px; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>🏀 NBA <span>Predictor</span></h1>
+  <button class="btn" id="settingsBtn">⚙ Settings</button>
+</header>
+
+<main>
+  <div id="keyBanner" class="banner hidden">
+    <strong>One-time setup:</strong> to use the AI chat, add your Claude API key.
+    <button class="btn primary" id="bannerKeyBtn" style="margin-left:8px">Add API key</button>
+    <div class="small muted" style="margin-top:6px">The "Check a line" and "Alt lines" tabs work without a key.</div>
+  </div>
+
+  <nav>
+    <button data-tab="chat" class="active">💬 Ask the AI</button>
+    <button data-tab="analyze">🎯 Check a line</button>
+    <button data-tab="alt">📊 Alt lines</button>
+  </nav>
+
+  <!-- CHAT -->
+  <section id="tab-chat" class="panel">
+    <div class="chips" id="examples">
+      <button class="chip">Is Jokic over 11.5 rebounds tonight? Book has -130 / +105</button>
+      <button class="chip">Give me better alt lines for that</button>
+      <button class="chip">Rank these: Tatum o27.5 pts -115, Brown o6.5 reb +100, White o2.5 threes -140</button>
+      <button class="chip">What's a safe points line for Shai tonight?</button>
+    </div>
+    <div id="messages"></div>
+    <div class="composer">
+      <textarea id="chatInput" placeholder="Ask about any player prop… (Enter to send, Shift+Enter for a new line)"></textarea>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <button class="btn primary" id="sendBtn">Send</button>
+        <button class="btn small" id="newChatBtn" title="Start a fresh conversation">New chat</button>
+      </div>
+    </div>
+    <div class="small muted" style="margin-top:6px">The AI checks injury news and lineups on the web, so answers can take 30–90 seconds.</div>
+  </section>
+
+  <!-- CHECK A LINE -->
+  <section id="tab-analyze" class="panel hidden">
+    <form id="analyzeForm">
+      <div class="grid">
+        <label>Player<input name="player" required placeholder="Jalen Brunson"></label>
+        <label>Stat<select name="stat" class="statSelect"></select></label>
+        <label>Line<input name="line" type="number" step="0.5" required placeholder="26.5"></label>
+        <label>Over odds<input name="over_odds" type="number" placeholder="-115"></label>
+        <label>Under odds<input name="under_odds" type="number" placeholder="-105"></label>
+      </div>
+      <div class="grid" style="margin-top:10px">
+        <label>Opponent<input name="opponent" placeholder="BOS or Celtics"></label>
+        <label>Venue<select name="home"><option value="unknown">Not sure</option><option value="home">Home</option><option value="away">Away</option></select></label>
+        <label>Expected minutes<input name="minutes" type="number" step="0.5" placeholder="auto"></label>
+        <label class="check"><input type="checkbox" name="b2b"> Back-to-back</label>
+      </div>
+      <div class="actions"><button class="btn primary" type="submit">Check this line</button><span class="muted small status"></span></div>
+    </form>
+    <div class="result" id="analyzeResult"></div>
+  </section>
+
+  <!-- ALT LINES -->
+  <section id="tab-alt" class="panel hidden">
+    <form id="altForm">
+      <div class="grid">
+        <label>Player<input name="player" required placeholder="Nikola Jokic"></label>
+        <label>Stat<select name="stat" class="statSelect"></select></label>
+        <label>Opponent<input name="opponent" placeholder="LAL or Lakers"></label>
+        <label>Venue<select name="home"><option value="unknown">Not sure</option><option value="home">Home</option><option value="away">Away</option></select></label>
+        <label>Expected minutes<input name="minutes" type="number" step="0.5" placeholder="auto"></label>
+        <label>"Safe" means at least<select name="min_prob"><option value="0.65">65%</option><option value="0.70" selected>70%</option><option value="0.75">75%</option><option value="0.80">80%</option></select></label>
+      </div>
+      <div class="actions"><button class="btn primary" type="submit">Show alt lines</button><span class="muted small status"></span></div>
+    </form>
+    <div class="result" id="altResult"></div>
+  </section>
+</main>
+
+<footer>Probabilities, not guarantees. A 70% pick still loses 3 times in 10. Bet only what you can afford to lose.</footer>
+
+<dialog id="settings">
+  <h3 style="margin-top:0">Claude API key</h3>
+  <p class="small muted">Get one at <strong>console.anthropic.com</strong> → API Keys → Create Key. It's saved only on this computer.</p>
+  <p class="small" id="keyState"></p>
+  <input id="keyInput" type="password" placeholder="sk-ant-..." autocomplete="off">
+  <p class="error small" id="keyError"></p>
+  <div class="actions" style="justify-content:flex-end">
+    <button class="btn" id="removeKeyBtn">Remove key</button>
+    <button class="btn" id="closeKeyBtn">Close</button>
+    <button class="btn primary" id="saveKeyBtn">Save</button>
+  </div>
+</dialog>
+
+<script>
+const STATS = [["PTS","Points"],["REB","Rebounds"],["AST","Assists"],["FG3M","3-pointers made"],["PRA","Pts + Reb + Ast"],["PR","Pts + Reb"],["PA","Pts + Ast"],["RA","Reb + Ast"],["STL","Steals"],["BLK","Blocks"],["STOCKS","Steals + Blocks"],["TOV","Turnovers"],["FTM","Free throws made"]];
+document.querySelectorAll(".statSelect").forEach(s => s.innerHTML = STATS.map(([v, t]) => `<option value="${v}">${t}</option>`).join(""));
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const pct = p => (100 * p).toFixed(1) + "%";
+const odds = o => (o > 0 ? "+" : "") + Math.round(o);
+const signed = (x, digits = 1) => `<span class="${x >= 0 ? "pos" : "neg"}">${x >= 0 ? "+" : ""}${x.toFixed(digits)}</span>`;
+let session = crypto.randomUUID ? crypto.randomUUID() : String(Math.random());
+
+async function api(path, body) {
+  const res = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body || {}) });
+  let data;
+  try { data = await res.json(); } catch { throw new Error("The app stopped responding. Is the launcher window still open?"); }
+  if (!res.ok) throw new Error(data.error || "Request failed");
+  return data;
+}
+
+/* tabs */
+document.querySelectorAll("nav button").forEach(b => b.onclick = () => {
+  document.querySelectorAll("nav button").forEach(x => x.classList.toggle("active", x === b));
+  ["chat", "analyze", "alt"].forEach(t => $("tab-" + t).classList.toggle("hidden", t !== b.dataset.tab));
+});
+
+/* settings / key */
+async function refreshStatus() {
+  try {
+    const s = await api("/api/status");
+    $("keyBanner").classList.toggle("hidden", s.has_key);
+    $("keyState").textContent = s.has_key ? `A key is saved (${s.key_hint}).` + (s.key_from_env ? " It comes from the ANTHROPIC_API_KEY environment variable." : "") : "No key saved yet.";
+  } catch (e) { /* server not up yet */ }
+}
+const openSettings = () => { $("keyError").textContent = ""; $("keyInput").value = ""; $("settings").showModal(); };
+$("settingsBtn").onclick = openSettings;
+$("bannerKeyBtn").onclick = openSettings;
+$("closeKeyBtn").onclick = () => $("settings").close();
+$("saveKeyBtn").onclick = async () => {
+  try { await api("/api/key", { key: $("keyInput").value }); $("settings").close(); refreshStatus(); }
+  catch (e) { $("keyError").textContent = e.message; }
+};
+$("removeKeyBtn").onclick = async () => { await api("/api/key", { key: "" }); refreshStatus(); $("settings").close(); };
+refreshStatus();
+
+/* tiny markdown renderer for AI answers */
+function inline(s) {
+  return esc(s).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/(^|[^*])\*([^*]+)\*/g, "$1<em>$2</em>").replace(/`([^`]+)`/g, "<code>$1</code>");
+}
+function markdown(md) {
+  const lines = md.split("\n"); let html = "", i = 0;
+  while (i < lines.length) {
+    const line = lines[i];
+    if (/^\s*\|.*\|\s*$/.test(line)) {
+      const rows = [];
+      while (i < lines.length && /^\s*\|.*\|\s*$/.test(lines[i])) rows.push(lines[i++]);
+      const cells = r => r.trim().slice(1, -1).split("|").map(c => c.trim());
+      const body = rows.filter(r => !/^\s*\|[\s:|-]+\|\s*$/.test(r));
+      html += "<table>" + body.map((r, n) => "<tr>" + cells(r).map(c => n === 0 ? `<th>${inline(c)}</th>` : `<td>${inline(c)}</td>`).join("") + "</tr>").join("") + "</table>";
+      continue;
+    }
+    let m;
+    if ((m = line.match(/^(#{1,6})\s+(.*)/))) { html += `<h3>${inline(m[2])}</h3>`; i++; continue; }
+    if (/^\s*[-*]\s+/.test(line)) {
+      html += "<ul>"; while (i < lines.length && /^\s*[-*]\s+/.test(lines[i])) html += `<li>${inline(lines[i++].replace(/^\s*[-*]\s+/, ""))}</li>`; html += "</ul>"; continue;
+    }
+    if (/^\s*\d+[.)]\s+/.test(line)) {
+      html += "<ol>"; while (i < lines.length && /^\s*\d+[.)]\s+/.test(lines[i])) html += `<li>${inline(lines[i++].replace(/^\s*\d+[.)]\s+/, ""))}</li>`; html += "</ol>"; continue;
+    }
+    if (/^\s*(---|\*\*\*)\s*$/.test(line)) { html += "<hr>"; i++; continue; }
+    if (line.trim()) { html += `<p>${inline(line)}</p>`; }
+    i++;
+  }
+  return html;
+}
+
+/* chat */
+function addMsg(cls, html) { const d = document.createElement("div"); d.className = "msg " + cls; d.innerHTML = html; $("messages").appendChild(d); d.scrollIntoView({ block: "end", behavior: "smooth" }); return d; }
+async function send(text) {
+  text = (text ?? $("chatInput").value).trim();
+  if (!text) return;
+  $("chatInput").value = ""; $("sendBtn").disabled = true;
+  addMsg("user", esc(text));
+  const pending = addMsg("ai", '<span class="thinking">Analyzing: pulling stats, checking injury news, running the numbers…</span>');
+  const started = Date.now();
+  const timer = setInterval(() => { pending.querySelector(".thinking").textContent = `Analyzing… ${Math.round((Date.now() - started) / 1000)}s`; }, 1000);
+  try {
+    const r = await api("/api/chat", { session, message: text });
+    pending.innerHTML = markdown(r.answer) + (r.steps.length ? `<details class="steps"><summary>What the AI checked (${r.steps.length})</summary>${r.steps.map(s => `<div>• ${esc(s)}</div>`).join("")}</details>` : "");
+  } catch (e) {
+    pending.innerHTML = `<span class="error">${esc(e.message)}</span>`;
+    refreshStatus();
+  } finally { clearInterval(timer); $("sendBtn").disabled = false; $("chatInput").focus(); }
+}
+$("sendBtn").onclick = () => send();
+$("chatInput").addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } });
+document.querySelectorAll("#examples .chip").forEach(c => c.onclick = () => { $("chatInput").value = c.textContent; $("chatInput").focus(); });
+$("newChatBtn").onclick = async () => { await api("/api/reset", { session }).catch(() => {}); session = crypto.randomUUID ? crypto.randomUUID() : String(Math.random()); $("messages").innerHTML = ""; };
+
+/* forms */
+function formBody(form) {
+  const fd = new FormData(form), o = {};
+  for (const [k, v] of fd.entries()) o[k] = v;
+  o.b2b = !!fd.get("b2b");
+  return o;
+}
+async function runForm(form, path, out, render) {
+  const btn = form.querySelector("button[type=submit]"), status = form.querySelector(".status");
+  btn.disabled = true; status.textContent = "Loading stats from NBA.com… (first time for a player can take ~10s)";
+  try { out.innerHTML = render(await api(path, formBody(form))); }
+  catch (e) { out.innerHTML = `<p class="error">${esc(e.message)}</p>`; }
+  finally { btn.disabled = false; status.textContent = ""; }
+}
+
+function projectionTiles(p) {
+  return `<div class="tiles">
+    <div class="tile"><div class="k">Projection</div><div class="v">${p.projected_mean}</div></div>
+    <div class="tile"><div class="k">Likely range (80%)</div><div class="v">${p.range_10_90[0]}–${p.range_10_90[1]}</div></div>
+    <div class="tile"><div class="k">Projected minutes</div><div class="v">${p.projected_minutes}</div></div>
+    <div class="tile"><div class="k">Per 36 min</div><div class="v">${p.per_36}</div></div>
+  </div>` + (p.notes.length ? `<ul class="notes">${p.notes.map(n => `<li>${esc(n)}</li>`).join("")}</ul>` : "");
+}
+
+function renderAnalysis(r) {
+  const c = r.context, p = r.projection, pr = r.probabilities, v = r.verdict, hr = r.hit_rates;
+  const cls = v.strength.startsWith("STRONG") ? "strong" : v.strength.startsWith("LEAN") || v.strength.startsWith("SLIGHT") ? "lean" : "pass";
+  const evRows = ["over", "under"].map(s => r.bet_evaluation[s]).filter(Boolean).map(e => `<tr><td>${e.side} ${odds(e.odds)}</td><td>${pct(e.model_win_prob)}</td><td>${pct(e.no_vig_market_prob ?? e.book_implied_prob)}</td><td>${signed(100 * e.edge_vs_market)}%</td><td>${signed(e.ev_per_1_unit, 3)}</td><td>${e.kelly_quarter_pct}%</td></tr>`).join("");
+  const windows = Object.entries(hr).filter(([k, x]) => k !== "recent_values" && x);
+  return `
+  <h3 style="margin:4px 0 10px">${esc(c.player)} (${esc(c.team)}) · ${esc(p.stat)} ${r.line}${c.opponent ? " vs " + esc(c.opponent) : ""}</h3>
+  <div class="verdict ${cls}">
+    <div class="pick">${v.pick}</div>
+    <div><div><strong>${pct(v.hit_probability)}</strong> chance to hit · <strong>${esc(v.strength)}</strong></div><div class="small muted">${esc(v.basis)}</div></div>
+  </div>
+  <div class="bar">
+    <div class="o" style="width:${100 * pr.over}%">${pr.over > .12 ? "Over " + pct(pr.over) : ""}</div>
+    ${pr.push > 0 ? `<div class="p" style="width:${100 * pr.push}%">${pr.push > .08 ? "Push" : ""}</div>` : ""}
+    <div class="u" style="width:${100 * pr.under}%">${pr.under > .12 ? "Under " + pct(pr.under) : ""}</div>
+  </div>
+  ${projectionTiles(p)}
+  <p><strong>Fair odds</strong> (what the line should be priced at): over ${odds(r.fair_odds.over)} · under ${odds(r.fair_odds.under)}</p>
+  ${evRows ? `<div class="scroll"><table class="data"><tr><th>Bet</th><th>Model</th><th>Market</th><th>Edge</th><th>EV / $1</th><th>Stake (¼ Kelly)</th></tr>${evRows}</table></div>` : `<p class="small muted">Add the book's odds to see edge, EV and stake size.</p>`}
+  <h4 style="margin:16px 0 6px">How often it actually went over</h4>
+  <div class="scroll"><table class="data"><tr><th>Window</th><th>Over</th><th>Under</th><th>Push</th><th>Over %</th><th>Average</th></tr>
+    ${windows.map(([k, x]) => `<tr><td>${esc(k.replace(/_/g, " "))}</td><td>${x.over}</td><td>${x.under}</td><td>${x.push}</td><td>${x.over_pct}%</td><td>${x.avg}</td></tr>`).join("")}
+  </table></div>
+  <p class="small muted">Last 10 games (newest first): ${hr.recent_values.join(", ")}</p>`;
+}
+
+function renderAlt(r) {
+  const c = r.context, p = r.projection, mean = p.projected_mean;
+  const safeOver = Object.entries(r).find(([k]) => k.startsWith("highest_over"))?.[1];
+  const safeUnder = Object.entries(r).find(([k]) => k.startsWith("lowest_under"))?.[1];
+  const nearest = r.ladder.reduce((a, b) => Math.abs(b.line - mean) < Math.abs(a.line - mean) ? b : a).line;
+  return `
+  <h3 style="margin:4px 0 10px">${esc(c.player)} · ${esc(p.stat)}${c.opponent ? " vs " + esc(c.opponent) : ""}</h3>
+  ${projectionTiles(p)}
+  <div class="tiles">
+    <div class="tile"><div class="k">Safest over</div><div class="v">${safeOver ? "Over " + safeOver.line : "none"}</div><div class="small muted">${safeOver ? pct(safeOver.p_over) + " · fair " + odds(safeOver.fair_over_odds) : ""}</div></div>
+    <div class="tile"><div class="k">Safest under</div><div class="v">${safeUnder ? "Under " + safeUnder.line : "none"}</div><div class="small muted">${safeUnder ? pct(safeUnder.p_under) + " · fair " + odds(safeUnder.fair_under_odds) : ""}</div></div>
+  </div>
+  <p class="small muted">A line is only a good bet if the book's odds are better than the "fair" odds below. Example: if fair is -250 and the book offers -180, that's value.</p>
+  <div class="scroll"><table class="data"><tr><th>Line</th><th>P(over)</th><th>Fair over odds</th><th>P(under)</th><th>Fair under odds</th></tr>
+    ${r.ladder.map(x => `<tr class="${x.line === nearest ? "near" : ""}"><td>${x.line}</td><td>${pct(x.p_over)}</td><td>${odds(x.fair_over_odds)}</td><td>${pct(x.p_under)}</td><td>${odds(x.fair_under_odds)}</td></tr>`).join("")}
+  </table></div>`;
+}
+
+$("analyzeForm").onsubmit = e => { e.preventDefault(); runForm(e.target, "/api/analyze", $("analyzeResult"), renderAnalysis); };
+$("altForm").onsubmit = e => { e.preventDefault(); runForm(e.target, "/api/alt", $("altResult"), renderAlt); };
+</script>
+</body>
+</html>

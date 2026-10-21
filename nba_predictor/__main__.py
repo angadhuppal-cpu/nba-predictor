@@ -1,6 +1,7 @@
 """Command-line entry point.
 
-    python -m nba_predictor chat                                   # talk to the AI analyst
+    python -m nba_predictor web                                    # browser app (what the launchers run)
+    python -m nba_predictor chat                                   # talk to the AI analyst in the terminal
     python -m nba_predictor ask "Will Tatum go over 27.5 points vs NYK?"
     python -m nba_predictor analyze "Jayson Tatum" PTS 27.5 --over -115 --under -105 --opp NYK --home
     python -m nba_predictor alt "Jayson Tatum" PTS --opp NYK
@@ -84,6 +85,10 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="nba_predictor", description="NBA player prop predictor")
     sub = ap.add_subparsers(dest="cmd", required=True)
 
+    w = sub.add_parser("web", help="Open the browser app")
+    w.add_argument("--port", type=int, default=8765)
+    w.add_argument("--no-browser", action="store_true", help="Don't open a browser tab automatically")
+
     c = sub.add_parser("chat", help="Interactive AI analyst (needs ANTHROPIC_API_KEY)")
     c.add_argument("--no-web", action="store_true", help="Disable web search for injuries/news")
     a = sub.add_parser("ask", help="One-shot question to the AI analyst")
@@ -127,7 +132,11 @@ def main(argv: list[str] | None = None) -> int:
 
     args = ap.parse_args(argv)
 
-    if args.cmd == "chat":
+    if args.cmd == "web":
+        from .web import serve
+
+        serve(args.port, open_browser=not args.no_browser)
+    elif args.cmd == "chat":
         chat(not args.no_web)
     elif args.cmd == "ask":
         from .agent import Analyst

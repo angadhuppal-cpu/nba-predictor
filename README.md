@@ -17,18 +17,44 @@ vs Boston going to hit?"*, and it will:
 > No model can tell you a line *will* hit. This tool tells you **how likely** it is and **whether the price is
 > worth it**. Even a 70% play loses 3 times in 10. Bet only what you can afford to lose.
 
-## Setup
+## Install (one time, no terminal needed)
 
-```bash
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-export ANTHROPIC_API_KEY=sk-ant-...      # needed only for the AI chat (chat / ask)
-```
+1. **Install Python 3.10 or newer** from [python.org/downloads](https://www.python.org/downloads/).
+   On Windows, tick **"Add python.exe to PATH"** on the first installer screen.
+2. **Download this app.** On GitHub, pick this branch in the branch menu, click the green **Code** button, then
+   **Download ZIP**. Unzip it somewhere easy to find, like your Desktop.
+3. **Double-click the launcher** in the unzipped folder:
+   - Windows: `Start NBA Predictor (Windows).bat`. If a blue "Windows protected your PC" box appears, click
+     **More info**, then **Run anyway**.
+   - Mac: `Start NBA Predictor (Mac).command`. The first time, macOS may block it: right-click it, choose
+     **Open**, then **Open** again.
 
-Run it from your own computer. stats.nba.com often blocks cloud-server IPs. Responses are cached in
+   The first launch spends 1–3 minutes installing what it needs. Your browser then opens the app.
+4. **Add your Claude API key** (only needed for the AI chat). Create one at
+   [console.anthropic.com](https://console.anthropic.com) under **API Keys** (you need a little credit on the
+   account). Then click **Settings** in the app and paste it in. It's saved only on your computer.
+
+**After that, just double-click the launcher.** Keep its black window open while you use the app, and close it
+when you're done.
+
+Run it on your own computer. stats.nba.com often blocks cloud servers. Stats are cached in
 `~/.cache/nba_predictor` for 6 hours.
 
-## Usage
+The browser app has three tabs:
+- **Ask the AI**: plain-English questions. Claude checks injury news, runs the model and gives a call.
+- **Check a line**: type a player, stat, line and odds to get the hit probability, edge, EV and stake size. No API key needed.
+- **Alt lines**: every alternate line with its hit probability and fair odds, plus the safest over/under. No API key needed.
+
+## Command line (optional)
+
+If you prefer the terminal, set things up yourself:
+
+```bash
+python -m venv .venv && source .venv/bin/activate     # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+export ANTHROPIC_API_KEY=sk-ant-...                     # Windows: set ANTHROPIC_API_KEY=sk-ant-...
+python -m nba_predictor web                             # the browser app
+```
 
 ### AI analyst (Claude)
 
@@ -92,6 +118,8 @@ nba_predictor/
   odds.py      # odds conversion, de-vig, EV, Kelly, parlays
   tools.py     # data + model joined into JSON-returning functions
   agent.py     # Claude analyst: system prompt, tool definitions, agent loop, web search
+  web.py       # local browser app server (127.0.0.1 only)
+  static/      # the browser page
   __main__.py  # CLI
 tests/         # offline tests on synthetic game logs (pytest)
 ```

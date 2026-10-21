@@ -210,13 +210,16 @@ class Analyst:
         self.system = SYSTEM_PROMPT.format(today=dt.date.today().isoformat())
         self.tools = TOOL_SPECS + ([WEB_SEARCH] if use_web_search else [])
         self.verbose = verbose
+        self.steps: list[str] = []  # what the analyst did during the last ask()
 
     def _log(self, msg: str) -> None:
+        self.steps.append(msg)
         if self.verbose:
             print(f"  \033[2m{msg}\033[0m", flush=True)
 
     def ask(self, question: str, max_steps: int = 25) -> str:
         self.messages.append({"role": "user", "content": question})
+        self.steps = []
         for _ in range(max_steps):
             response = self.client.beta.messages.create(
                 model=MODEL,
